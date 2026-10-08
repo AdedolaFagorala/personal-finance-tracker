@@ -33,6 +33,7 @@ def list_transactions(args):
         return
 
     print(
+        f"{'#':<5}"
         f"{'DATE':<12}"
         f"{'TYPE':<10}"
         f"{'CATEGORY':<18}"
@@ -40,16 +41,43 @@ def list_transactions(args):
         f"  DESCRIPTION"
     )
 
-    print("-" * 70)
+    print("-" * 75)
 
-    for transaction in transactions:
+    for index, transaction in enumerate(transactions, start=1):
         print(
+            f"{index:<5}"
             f"{transaction.date:<12}"
             f"{transaction.transaction_type:<10}"
             f"{transaction.category:<18}"
             f"${transaction.amount:>10.2f}"
             f"  {transaction.description}"
         )
+
+
+def delete_transaction(args):
+    transactions = load_transactions()
+
+    if not transactions:
+        print("No transactions found.")
+        return
+
+    index = args.number - 1
+
+    if index < 0 or index >= len(transactions):
+        print("Invalid transaction number.")
+        return
+
+    transaction = transactions[index]
+
+    print(
+        f"Deleting: ${transaction.amount:.2f} "
+        f"{transaction.category} - {transaction.description}"
+    )
+
+    transactions.pop(index)
+    save_transactions(transactions)
+
+    print("Transaction deleted.")
 
 
 def main():
@@ -96,6 +124,20 @@ def main():
     )
 
     add_parser.set_defaults(func=add_transaction)
+
+    # DELETE command
+    delete_parser = subparsers.add_parser(
+        "delete",
+        help="Delete a transaction",
+    )
+
+    delete_parser.add_argument(
+        "number",
+        type=int,
+        help="Transaction number to delete",
+    )
+
+    delete_parser.set_defaults(func=delete_transaction)
 
     args = parser.parse_args()
 
