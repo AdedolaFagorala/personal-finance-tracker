@@ -25,6 +25,33 @@ def add_transaction(args):
     print(f"  Date: {transaction.date}")
 
 
+def list_transactions(args):
+    transactions = load_transactions()
+
+    if not transactions:
+        print("No transactions found.")
+        return
+
+    print(
+        f"{'DATE':<12}"
+        f"{'TYPE':<10}"
+        f"{'CATEGORY':<18}"
+        f"{'AMOUNT':>12}"
+        f"  DESCRIPTION"
+    )
+
+    print("-" * 70)
+
+    for transaction in transactions:
+        print(
+            f"{transaction.date:<12}"
+            f"{transaction.transaction_type:<10}"
+            f"{transaction.category:<18}"
+            f"${transaction.amount:>10.2f}"
+            f"  {transaction.description}"
+        )
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Personal Finance Tracker"
@@ -32,6 +59,15 @@ def main():
 
     subparsers = parser.add_subparsers(dest="command")
 
+    # LIST command
+    list_parser = subparsers.add_parser(
+        "list",
+        help="List all transactions",
+    )
+
+    list_parser.set_defaults(func=list_transactions)
+
+    # ADD command
     add_parser = subparsers.add_parser(
         "add",
         help="Add a financial transaction",
