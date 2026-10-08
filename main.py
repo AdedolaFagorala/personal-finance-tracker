@@ -29,12 +29,7 @@ def add_transaction(args):
     transactions.append(transaction)
     save_transactions(transactions)
 
-    print("Transaction added:")
-    print(f"  Amount: ${transaction.amount:.2f}")
-    print(f"  Type: {transaction.transaction_type}")
-    print(f"  Category: {transaction.category}")
-    print(f"  Description: {transaction.description}")
-    print(f"  Date: {transaction.date}")
+    print("Transaction added successfully.")
 
 
 def list_transactions(args):
@@ -45,24 +40,18 @@ def list_transactions(args):
         return
 
     print(
-        f"{'#':<5}"
-        f"{'DATE':<12}"
-        f"{'TYPE':<10}"
-        f"{'CATEGORY':<18}"
-        f"{'AMOUNT':>12}"
-        f"  DESCRIPTION"
+        f"{'#':<5}{'DATE':<12}{'TYPE':<10}"
+        f"{'CATEGORY':<18}{'AMOUNT':>12}  DESCRIPTION"
     )
-
-    print("-" * 75)
+    print("-" * 85)
 
     for index, transaction in enumerate(transactions, start=1):
         print(
-            f"{index:<5}"
-            f"{transaction.date:<12}"
+            f"{index:<5}{transaction.date:<12}"
             f"{transaction.transaction_type:<10}"
             f"{transaction.category:<18}"
-            f"${transaction.amount:>10.2f}"
-            f"  {transaction.description}"
+            f"${transaction.amount:>10.2f}  "
+            f"{transaction.description}"
         )
 
 
@@ -79,126 +68,137 @@ def delete_transaction(args):
         print("Invalid transaction number.")
         return
 
-    transaction = transactions[index]
-
-    print(
-        f"Deleting: ${transaction.amount:.2f} "
-        f"{transaction.category} - {transaction.description}"
-    )
-
-    transactions.pop(index)
+    transaction = transactions.pop(index)
     save_transactions(transactions)
 
-    print("Transaction deleted.")
+    print(
+        f"Deleted {transaction.category}: "
+        f"${transaction.amount:.2f}"
+    )
 
 
-def show_summary(args):
+def edit_transaction(args):
     transactions = load_transactions()
 
     if not transactions:
         print("No transactions found.")
         return
 
-    total_income = 0
-    total_expenses = 0
+    index = args.number - 1
+
+    if index < 0 or index >= len(transactions):
+        print("Invalid transaction number.")
+        return
+
+    transaction = transactions[index]
+
+    if args.amount is not None:
+        if args.amount <= 0:
+            print("Error: Amount must be greater than 0.")
+            return
+        transaction.amount = args.amount
+
+    if args.category is not None:
+        if not args.category.strip():
+            print("Error: Category cannot be empty.")
+            return
+        transaction.category = args.category
+
+    if args.description is not None:
+        if not args.description.strip():
+            print("Error: Description cannot be empty.")
+            return
+        transaction.description = args.description
+
+    if args.type is not None:
+        transaction.transaction_type = args.type
+
+    save_transactions(transactions)
+    print("Transaction updated successfully.")
+
+
+def show_summary(args):
+    transactions = load_transactions()
+
+    total_income = sum(
+        t.amount for t in transactions
+        if t.transaction_type == "income"
+    )
+
+    total_expenses = sum(
+        t.amount for t in transactions
+        if t.transaction_type == "expense"
+    )
+
     spending_by_category = {}
 
     for transaction in transactions:
-        if transaction.transaction_type == "income":
-            total_income += transaction.amount
-
-        elif transaction.transaction_type == "expense":
-            total_expenses += transaction.amount
-
-            if transaction.category not in spending_by_category:
-                spending_by_category[transaction.category] = 0
-
-            spending_by_category[transaction.category] += transaction.amount
-
-    balance = total_income - total_expenses
+        if transaction.transaction_type == "expense":
+            category = transaction.category
+            spending_by_category[category] = (
+                spending_by_category.get(category, 0)
+                + transaction.amount
+            )
 
     print("Financial Summary")
     print("-" * 30)
     print(f"Total income:   ${total_income:,.2f}")
     print(f"Total expenses: ${total_expenses:,.2f}")
-    print(f"Balance:        ${balance:,.2f}")
+    print(f"Balance:        ${total_income - total_expenses:,.2f}")
 
-    print()
-    print("Spending by category")
+    print("\nSpending by category")
     print("-" * 30)
 
-    if not spending_by_category:
-        print("No expenses found.")
-    else:
-        for category, amount in spending_by_category.items():
+    if spending_by_category:
+        for category, amount in sorted(spending_by_category.items()):
             print(f"{category:<20} ${amount:,.2f}")
+    else:
+        print("No expenses found.")
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="Personal Finance Tracker"
     )
-
     subparsers = parser.add_subparsers(dest="command")
 
-    # LIST command
     list_parser = subparsers.add_parser(
-        "list",
-        help="List all transactions",
+        "list", help="List all transactions"
     )
-
     list_parser.set_defaults(func=list_transactions)
 
-    # ADD command
     add_parser = subparsers.add_parser(
-        "add",
-        help="Add a financial transaction",
+        "add", help="Add a transaction"
     )
-
     add_parser.add_argument(
-        "type",
-        choices=["income", "expense"],
-        help="Transaction type",
+        "type", choices=["income", "expense"]
     )
-
-    add_parser.add_argument(
-        "amount",
-        type=float,
-        help="Transaction amount",
-    )
-
-    add_parser.add_argument(
-        "category",
-        help="Transaction category",
-    )
-
-    add_parser.add_argument(
-        "description",
-        help="Transaction description",
-    )
-
+    add_parser.add_argument("amount", type=float)
+    add_parser.add_argument("category")
+    add_parser.add_argument("description")
     add_parser.set_defaults(func=add_transaction)
 
-    # DELETE command
     delete_parser = subparsers.add_parser(
-        "delete",
-        help="Delete a transaction",
+        "delete", help="Delete a transaction"
     )
-
-    delete_parser.add_argument(
-        "number",
-        type=int,
-        help="Transaction number to delete",
-    )
-
+    delete_parser.add_argument("number", type=int)
     delete_parser.set_defaults(func=delete_transaction)
 
-    # SUMMARY command
-    summary_parser = subparsers.add_parser(
-        "summary",
-        help="Show financial summary",
+    edit_parser = subparsers.add_parser(
+        "edit", help="Edit an existing transaction"
     )
+    edit_parser.add_argument("number", type=int)
+    edit_parser.add_argument("--amount", type=float)
+    edit_parser.add_argument("--category")
+    edit_parser.add_argument("--description")
+    edit_parser.add_argument(
+        "--type", choices=["income", "expense"]
+    )
+    edit_parser.set_defaults(func=edit_transaction)
 
+    summary_parser = subparsers.add_parser(
+        "summary", help="Show financial summary"
+    )
     summary_parser.set_defaults(func=show_summary)
 
     args = parser.parse_args()
