@@ -80,6 +80,47 @@ def delete_transaction(args):
     print("Transaction deleted.")
 
 
+def show_summary(args):
+    transactions = load_transactions()
+
+    if not transactions:
+        print("No transactions found.")
+        return
+
+    total_income = 0
+    total_expenses = 0
+    spending_by_category = {}
+
+    for transaction in transactions:
+        if transaction.transaction_type == "income":
+            total_income += transaction.amount
+        elif transaction.transaction_type == "expense":
+            total_expenses += transaction.amount
+
+            if transaction.category not in spending_by_category:
+                spending_by_category[transaction.category] = 0
+
+            spending_by_category[transaction.category] += transaction.amount
+
+    balance = total_income - total_expenses
+
+    print("Financial Summary")
+    print("-" * 30)
+    print(f"Total income:   ${total_income:,.2f}")
+    print(f"Total expenses: ${total_expenses:,.2f}")
+    print(f"Balance:        ${balance:,.2f}")
+
+    print()
+    print("Spending by category")
+    print("-" * 30)
+
+    if not spending_by_category:
+        print("No expenses found.")
+    else:
+        for category, amount in spending_by_category.items():
+            print(f"{category:<20} ${amount:,.2f}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Personal Finance Tracker"
@@ -138,6 +179,14 @@ def main():
     )
 
     delete_parser.set_defaults(func=delete_transaction)
+
+    # SUMMARY command
+    summary_parser = subparsers.add_parser(
+        "summary",
+        help="Show financial summary",
+    )
+
+    summary_parser.set_defaults(func=show_summary)
 
     args = parser.parse_args()
 
