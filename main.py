@@ -1,15 +1,21 @@
 import argparse
 
+from storage import load_transactions, save_transactions
 from transaction import Transaction
 
 
 def add_transaction(args):
+    transactions = load_transactions()
+
     transaction = Transaction(
         args.amount,
         args.category,
         args.description,
         args.type,
     )
+
+    transactions.append(transaction)
+    save_transactions(transactions)
 
     print("Transaction added:")
     print(f"  Amount: ${transaction.amount:.2f}")
