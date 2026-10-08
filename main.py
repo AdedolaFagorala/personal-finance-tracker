@@ -5,6 +5,18 @@ from transaction import Transaction
 
 
 def add_transaction(args):
+    if args.amount <= 0:
+        print("Error: Amount must be greater than 0.")
+        return
+
+    if not args.category.strip():
+        print("Error: Category cannot be empty.")
+        return
+
+    if not args.description.strip():
+        print("Error: Description cannot be empty.")
+        return
+
     transactions = load_transactions()
 
     transaction = Transaction(
@@ -94,6 +106,7 @@ def show_summary(args):
     for transaction in transactions:
         if transaction.transaction_type == "income":
             total_income += transaction.amount
+
         elif transaction.transaction_type == "expense":
             total_expenses += transaction.amount
 
